@@ -8,6 +8,7 @@ require __DIR__ . '/../src/Migrations.php';
 require __DIR__ . '/../src/Repositories/EventRepository.php';
 require __DIR__ . '/../src/Repositories/AttendanceRepository.php';
 require __DIR__ . '/../src/Reports/SummaryReport.php';
+require __DIR__ . '/../src/Reports/FollowUpReport.php';
 
 function assertTrue(bool $condition, string $message): void
 {
@@ -34,6 +35,7 @@ Migrations::createTables($pdo, 'sqlite');
 $eventRepo = new EventRepository($pdo);
 $attendanceRepo = new AttendanceRepository($pdo);
 $summaryReport = new SummaryReport($pdo);
+$followUpReport = new FollowUpReport($pdo);
 
 $eventId = $eventRepo->create('Test Event', '2026-02-01', 'Lab', 'Testing');
 assertTrue($eventId > 0, 'Event created');
@@ -49,5 +51,8 @@ assertTrue(count($records) === 2, 'Attendance list contains two records');
 
 $summary = $summaryReport->attendanceSummary('2026-01-01', '2026-12-31');
 assertTrue(count($summary) === 2, 'Summary has two status rows');
+
+$followUps = $followUpReport->listFollowUps('2026-01-01', '2026-12-31');
+assertTrue(count($followUps) === 1, 'Follow-up report has one row');
 
 echo "All tests passed.\n";

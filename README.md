@@ -7,6 +7,7 @@ CLI for logging event attendance, engagement scores, and follow-up needs for Gro
 - Log attendance with engagement scores and follow-up flags
 - List event rosters per event
 - Generate summary stats over a time window
+- Produce follow-up queues for outreach
 - PostgreSQL-backed persistence with seed data
 
 ## Tech
@@ -43,6 +44,7 @@ php bin/gs-event-ledger.php add-attendance --event-id 1 --name "Avery Jordan" --
 php bin/gs-event-ledger.php list-events
 php bin/gs-event-ledger.php list-attendance --event-id 1
 php bin/gs-event-ledger.php summary --since 2026-01-01 --until 2026-02-28
+php bin/gs-event-ledger.php follow-ups --since 2026-01-01 --until 2026-02-28
 ```
 
 ## Tests

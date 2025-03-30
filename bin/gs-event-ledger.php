@@ -8,6 +8,7 @@ require __DIR__ . '/../src/Migrations.php';
 require __DIR__ . '/../src/Repositories/EventRepository.php';
 require __DIR__ . '/../src/Repositories/AttendanceRepository.php';
 require __DIR__ . '/../src/Reports/SummaryReport.php';
+require __DIR__ . '/../src/Reports/FollowUpReport.php';
 
 function usage(): void
 {
@@ -22,6 +23,7 @@ Usage:
   php bin/gs-event-ledger.php list-events
   php bin/gs-event-ledger.php list-attendance --event-id 1
   php bin/gs-event-ledger.php summary [--since YYYY-MM-DD] [--until YYYY-MM-DD]
+  php bin/gs-event-ledger.php follow-ups [--since YYYY-MM-DD] [--until YYYY-MM-DD]
 
 Environment:
   GS_DB_DRIVER=pgsql|sqlite
@@ -88,6 +90,7 @@ $pdo = Database::connect($config);
 $eventRepo = new EventRepository($pdo);
 $attendanceRepo = new AttendanceRepository($pdo);
 $summaryReport = new SummaryReport($pdo);
+$followUpReport = new FollowUpReport($pdo);
 
 $args = parseArgs($argv);
 
@@ -187,6 +190,30 @@ switch ($command) {
                 $row['count'],
                 $avgScore,
                 $row['follow_ups']
+            );
+        }
+        break;
+
+    case 'follow-ups':
+        $since = $args['since'] ?? date('Y-m-d', strtotime('-30 days'));
+        $until = $args['until'] ?? date('Y-m-d');
+        $rows = $followUpReport->listFollowUps((string) $since, (string) $until);
+        if (!$rows) {
+            echo "No follow-up records between {$since} and {$until}.\n";
+            break;
+        }
+        echo "Follow-ups ({$since} to {$until}):\n";
+        foreach ($rows as $row) {
+            $score = $row['engagement_score'] ?? 'n/a';
+            $email = $row['scholar_email'] ?? 'n/a';
+            printf(
+                "- %s (%s) | event: %s on %s | status: %s | score: %s\n",
+                $row['scholar_name'],
+                $email,
+                $row['event_name'],
+                $row['event_date'],
+                $row['status'],
+                $score
             );
         }
         break;
