@@ -9,6 +9,7 @@ require __DIR__ . '/../src/Repositories/EventRepository.php';
 require __DIR__ . '/../src/Repositories/AttendanceRepository.php';
 require __DIR__ . '/../src/Reports/SummaryReport.php';
 require __DIR__ . '/../src/Reports/FollowUpReport.php';
+require __DIR__ . '/../src/Reports/FollowUpReport.php';
 
 function usage(): void
 {
@@ -23,6 +24,8 @@ Usage:
   php bin/gs-event-ledger.php list-events
   php bin/gs-event-ledger.php list-attendance --event-id 1
   php bin/gs-event-ledger.php summary [--since YYYY-MM-DD] [--until YYYY-MM-DD]
+  php bin/gs-event-ledger.php follow-up-queue [--since YYYY-MM-DD] [--until YYYY-MM-DD]
+  php bin/gs-event-ledger.php engagement-leaderboard [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--limit 5]
   php bin/gs-event-ledger.php follow-ups [--since YYYY-MM-DD] [--until YYYY-MM-DD]
 
 Environment:
@@ -90,6 +93,7 @@ $pdo = Database::connect($config);
 $eventRepo = new EventRepository($pdo);
 $attendanceRepo = new AttendanceRepository($pdo);
 $summaryReport = new SummaryReport($pdo);
+$followUpReport = new FollowUpReport($pdo);
 $followUpReport = new FollowUpReport($pdo);
 
 $args = parseArgs($argv);
@@ -189,6 +193,56 @@ switch ($command) {
                 $row['status'],
                 $row['count'],
                 $avgScore,
+                $row['follow_ups']
+            );
+        }
+        break;
+
+    case 'follow-up-queue':
+        $since = $args['since'] ?? date('Y-m-d', strtotime('-30 days'));
+        $until = $args['until'] ?? date('Y-m-d');
+        $rows = $followUpReport->listFollowUps((string) $since, (string) $until);
+        if (!$rows) {
+            echo "No follow-up items between {$since} and {$until}.\n";
+            break;
+        }
+        echo "Follow-up queue ({$since} to {$until}):\n";
+        foreach ($rows as $row) {
+            $email = $row['scholar_email'] ?? 'n/a';
+            $score = $row['engagement_score'] ?? 'n/a';
+            $location = $row['location'] ?? 'Remote';
+            printf(
+                "- %s (%s) | %s | score:%s | event:%s on %s (%s)\n",
+                $row['scholar_name'],
+                $email,
+                $row['status'],
+                $score,
+                $row['event_name'],
+                $row['event_date'],
+                $location
+            );
+        }
+        break;
+
+    case 'engagement-leaderboard':
+        $since = $args['since'] ?? date('Y-m-d', strtotime('-90 days'));
+        $until = $args['until'] ?? date('Y-m-d');
+        $limit = isset($args['limit']) ? max(1, (int) $args['limit']) : 5;
+        $rows = $summaryReport->engagementLeaderboard((string) $since, (string) $until, $limit);
+        if (!$rows) {
+            echo "No events found.\n";
+            break;
+        }
+        echo "Engagement leaderboard ({$since} to {$until}):\n";
+        foreach ($rows as $row) {
+            $avgScore = $row['avg_score'] !== null ? number_format((float) $row['avg_score'], 2) : 'n/a';
+            $location = $row['location'] ?? 'Remote';
+            printf(
+                "- %s | %s | avg score %s | attendance %s | follow-ups %s\n",
+                $row['name'],
+                $row['event_date'] . ' (' . $location . ')',
+                $avgScore,
+                $row['attendance_count'],
                 $row['follow_ups']
             );
         }

@@ -22,10 +22,11 @@ final class FollowUpReport
                     a.notes,
                     a.created_at,
                     e.name AS event_name,
-                    e.event_date
+                    e.event_date,
+                    e.location
              FROM gs_event_attendance a
              JOIN gs_event_events e ON e.id = a.event_id
-             WHERE a.follow_up_needed = TRUE
+             WHERE (a.follow_up_needed = 1 OR a.follow_up_needed = TRUE)
                AND date(a.created_at) BETWEEN :since AND :until
              ORDER BY e.event_date DESC, a.created_at DESC'
         );

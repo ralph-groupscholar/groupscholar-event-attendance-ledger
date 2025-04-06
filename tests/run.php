@@ -55,4 +55,8 @@ assertTrue(count($summary) === 2, 'Summary has two status rows');
 $followUps = $followUpReport->listFollowUps('2026-01-01', '2026-12-31');
 assertTrue(count($followUps) === 1, 'Follow-up report has one row');
 
+$leaderboard = $summaryReport->engagementLeaderboard('2026-01-01', '2026-12-31', 5);
+assertTrue(count($leaderboard) === 1, 'Leaderboard has one event');
+assertTrue((int) $leaderboard[0]['attendance_count'] === 2, 'Leaderboard attendance count is correct');
+
 echo "All tests passed.\n";
